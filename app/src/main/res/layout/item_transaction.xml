@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:padding="12dp"
+    android:gravity="center_vertical"
+    android:background="?android:attr/selectableItemBackground"
+    android:clickable="true"
+    android:focusable="true">
+
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/transaction_type"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/income"
+            android:textColor="?attr/appTextSecondary"
+            android:textSize="10sp"
+            android:textAllCaps="true"
+            android:layout_marginBottom="2dp" />
+
+        <TextView
+            android:id="@+id/transaction_description"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/description"
+            android:textColor="?attr/appTextPrimary"
+            android:textSize="14sp" />
+
+        <TextView
+            android:id="@+id/transaction_date"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/jan_1_2024"
+            android:textColor="?attr/appTextSecondary"
+            android:textSize="11sp"
+            android:layout_marginTop="2dp" />
+    </LinearLayout>
+
+    <TextView
+        android:id="@+id/transaction_amount"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/s_0_00"
+        android:textColor="?attr/appTextPrimary"
+        android:textSize="16sp"
+        android:textStyle="bold"
+        android:layout_marginEnd="12dp"
+        android:gravity="end" />
+
+    <ImageButton
+        android:id="@+id/delete_transaction_button"
+        android:layout_width="32dp"
+        android:layout_height="32dp"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:src="@drawable/ic_delete"
+        android:tint="?attr/appIconTint"
+        android:contentDescription="@string/delete_transaction"
+        android:padding="6dp"
+        android:scaleType="centerInside"/>
+
+</LinearLayout>

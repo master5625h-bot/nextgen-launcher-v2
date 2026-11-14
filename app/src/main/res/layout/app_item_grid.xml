@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:gravity="center_horizontal"
+    android:paddingVertical="8dp"
+    android:paddingEnd="8dp">
+
+    
+    <FrameLayout
+        android:layout_width="52dp"
+        android:layout_height="52dp"
+        android:layout_marginBottom="6dp">
+
+        <com.google.android.material.imageview.ShapeableImageView
+            android:id="@+id/app_icon"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:scaleType="centerCrop" />
+
+        <View
+            android:id="@+id/notification_badge"
+            android:layout_width="12dp"
+            android:layout_height="12dp"
+            android:layout_gravity="top|end"
+            android:background="@drawable/notification_badge_background"
+            android:visibility="gone" />
+    </FrameLayout>
+
+    
+    <LinearLayout
+        android:id="@+id/app_item_container"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:gravity="center_horizontal"
+        android:paddingHorizontal="10dp"
+        android:paddingVertical="3dp">
+
+        <TextView
+            android:id="@+id/app_name"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textSize="11sp"
+            android:textColor="?attr/appTextPrimary"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:maxWidth="64dp"
+            android:gravity="center"
+            android:shadowColor="#BF000000"
+            android:shadowDx="1.5"
+            android:shadowDy="1.5"
+            android:shadowRadius="3" />
+
+        <TextView
+            android:id="@+id/app_usage_time"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textSize="9sp"
+            android:textColor="?attr/appTextPrimary"
+            android:alpha="0.8"
+            android:maxWidth="64dp"
+            android:gravity="center"
+            android:visibility="gone"
+            android:shadowColor="#BF000000"
+            android:shadowDx="1.2"
+            android:shadowDy="1.2"
+            android:shadowRadius="2" />
+    </LinearLayout>
+</LinearLayout>

@@ -1,0 +1,133 @@
+Launch — Minimal Productivity Launcher
+
+A clean, fast, minimalist Android launcher built for focus and productivity.
+
+Replace your cluttered home screen with a simple interface that helps you stay organized, reduce distractions, and get things done.
+
+Open source • No ads • No tracking • Privacy first
+
+🔍 Smart App Management
+
+Understand how you use your phone.
+
+• Apps automatically sorted by usage frequency
+• Daily & weekly usage charts
+• Per-app daily time limits — icons gray out when limits are reached
+• Quick session timers (1, 5, 10 minutes)
+
+🔕 Focus Mode
+
+Stay distraction-free.
+
+• Hide distracting apps instantly
+• Countdown focus timer that cannot be exited early
+• Automatic Do Not Disturb during focus sessions
+
+🔐 Security & Privacy
+
+Your data stays on your device.
+
+• App Lock with PIN or fingerprint
+• Encrypted vault for sensitive files (biometric + recovery key)
+• Privacy dashboard showing apps with sensitive permissions
+• All data stored locally on device
+
+✅ Tasks & Finance
+
+Built-in tools for daily productivity.
+
+• Task manager with priorities, due dates, and recurring tasks
+• Offline finance tracker for income and expenses
+• Notification reminders
+
+🎙️ Voice Commands
+
+Use your phone hands-free.
+
+• Call contacts or send messages by voice
+• Send WhatsApp messages
+• Open apps, search the web, or get directions
+
+📱 Widgets & Customization
+
+Create the home screen you want.
+
+Built-in widgets:
+
+• Weather
+• Calculator
+• Calendar
+• GitHub contributions
+• Sensors & system stats
+• Notifications
+
+Customization features:
+
+• Add third-party Android widgets
+• Control Center with quick toggles (Wi-Fi, DND, flashlight, etc.)
+• Grid or list layout
+• Custom wallpapers
+• Favorites dock
+
+🤏 Smart Gestures
+
+Quick actions without opening apps.
+
+• Shake twice to toggle flashlight
+• Flip phone to enable Do Not Disturb
+• Double-tap home screen to lock device
+• Tap contacts from search to call or message
+
+⚠️ Accessibility Service Disclosure
+
+Launch uses the Android Accessibility Service only to enable specific productivity features requiring system interaction.
+
+Used for:
+
+Double-Tap to Lock
+Lock the device by double-tapping the home screen.
+
+Screenshot Shortcut
+Capture screenshots using a quick gesture.
+
+Control Center Quick Toggles
+Allows toggling system settings like Wi-Fi, Do Not Disturb, and flashlight from the Control Center overlay, accessible from any screen.
+
+The Accessibility Service is NOT used to:
+
+• collect personal data
+• read screen content
+• monitor user activity
+• modify settings without permission
+
+All features are optional and can be disabled anytime in Settings.
+
+🔐 Permissions
+
+Launch requests only permissions needed for features:
+
+Contacts — search and call/message contacts
+Phone & SMS — call or send texts from search
+Storage — wallpapers and encrypted vault
+Microphone — voice commands
+Camera — flashlight control
+Usage Stats — app usage tracking & limits
+Notifications — show and manage notifications
+Calendar — upcoming events widget
+Activity Recognition — step counter widget
+Internet — weather & GitHub widgets
+Exact Alarms — task reminders
+Display Over Apps — dimmer & night overlay
+Notification Policy — DND control
+Biometric — unlock App Lock & vault
+
+🔒 Privacy First
+
+Launch does not collect, store, or share personal data.
+
+• No ads
+• No analytics
+• No telemetry
+• Fully open source
+
+Your device. Your data. Your control.

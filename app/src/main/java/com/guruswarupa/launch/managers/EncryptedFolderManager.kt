@@ -1,0 +1,617 @@
+package com.guruswarupa.launch.managers
+
+import android.content.Context
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import android.media.MediaMetadataRetriever
+import android.net.Uri
+import android.os.Build
+import android.util.Size
+import android.webkit.MimeTypeMap
+import java.io.*
+import java.security.SecureRandom
+import javax.crypto.Cipher
+import javax.crypto.SecretKey
+import javax.crypto.SecretKeyFactory
+import javax.crypto.spec.GCMParameterSpec
+import javax.crypto.spec.PBEKeySpec
+import javax.crypto.spec.SecretKeySpec
+
+class EncryptedFolderManager(private val context: Context) {
+
+    companion object {
+        private const val PBKDF2_ALGORITHM = "PBKDF2WithHmacSHA256"
+        private const val SALT_SIZE = 16
+        private const val IV_SIZE = 12
+        private const val ITERATIONS = 310000
+        private const val KEY_LENGTH = 256
+        private const val VAULT_DIR = "encrypted_vault"
+        private const val THUMBS_DIR = "vault_thumbs"
+        private const val TEMP_DIR = "vault_temp"
+        private const val CONFIG_FILE = ".vault_config"
+
+        private var masterKey: SecretKey? = null
+    }
+
+    private val encryptedFolder = File(context.filesDir, VAULT_DIR)
+    private val thumbnailFolder = File(context.filesDir, THUMBS_DIR)
+    private val configFile = File(encryptedFolder, CONFIG_FILE)
+
+    init {
+        if (!encryptedFolder.exists()) encryptedFolder.mkdirs()
+        if (!thumbnailFolder.exists()) thumbnailFolder.mkdirs()
+    }
+
+    fun isVaultSetup(): Boolean = configFile.exists()
+
+    fun getEncryptedFolder(): File = encryptedFolder
+    fun getThumbnailFolder(): File = thumbnailFolder
+
+    fun setupVault(password: String): Boolean {
+        try {
+            val salt = ByteArray(SALT_SIZE).apply { SecureRandom().nextBytes(this) }
+            val key = deriveKey(password, salt)
+
+            val verificationData = "VAULT_OPEN".toByteArray()
+            val iv = ByteArray(IV_SIZE).apply { SecureRandom().nextBytes(this) }
+            val cipher = Cipher.getInstance("AES/GCM/NoPadding")
+            cipher.init(Cipher.ENCRYPT_MODE, key, GCMParameterSpec(128, iv))
+            val encryptedVerification = cipher.doFinal(verificationData)
+
+            FileOutputStream(configFile).use { fos ->
+                fos.write(salt)
+                fos.write(iv)
+                fos.write(encryptedVerification)
+            }
+
+            masterKey = key
+            return true
+        } catch (e: Exception) {
+            e.printStackTrace()
+            return false
+        }
+    }
+
+    fun unlock(password: String): Boolean {
+        if (!configFile.exists()) return false
+
+        try {
+            FileInputStream(configFile).use { fis ->
+                val salt = ByteArray(SALT_SIZE)
+                val iv = ByteArray(IV_SIZE)
+                if (!readFully(fis, salt) || !readFully(fis, iv)) {
+                    return false
+                }
+                val encryptedVerification = fis.readBytes()
+
+                val key = deriveKey(password, salt)
+                val cipher = Cipher.getInstance("AES/GCM/NoPadding")
+                cipher.init(Cipher.DECRYPT_MODE, key, GCMParameterSpec(128, iv))
+
+                val decrypted = cipher.doFinal(encryptedVerification)
+                if (String(decrypted) == "VAULT_OPEN") {
+                    masterKey = key
+                    return true
+                }
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+        return false
+    }
+
+    private fun verifyPassword(password: String): SecretKey? {
+        if (!configFile.exists()) return null
+        return try {
+            FileInputStream(configFile).use { fis ->
+                val salt = ByteArray(SALT_SIZE)
+                val iv = ByteArray(IV_SIZE)
+                if (!readFully(fis, salt) || !readFully(fis, iv)) return null
+                val key = deriveKey(password, salt)
+                val cipher = Cipher.getInstance("AES/GCM/NoPadding")
+                cipher.init(Cipher.DECRYPT_MODE, key, GCMParameterSpec(128, iv))
+                if (String(cipher.doFinal(fis.readBytes())) == "VAULT_OPEN") key else null
+            }
+        } catch (e: Exception) {
+            null
+        }
+    }
+
+    private fun reencrypt(source: File, target: File, oldKey: SecretKey, newKey: SecretKey) {
+        FileInputStream(source).use { fis ->
+            val oldIv = ByteArray(IV_SIZE)
+            if (!readFully(fis, oldIv)) throw IOException("Invalid file format")
+            val decipher = Cipher.getInstance("AES/GCM/NoPadding")
+            decipher.init(Cipher.DECRYPT_MODE, oldKey, GCMParameterSpec(128, oldIv))
+            val newIv = ByteArray(IV_SIZE).apply { SecureRandom().nextBytes(this) }
+            val encipher = Cipher.getInstance("AES/GCM/NoPadding")
+            encipher.init(Cipher.ENCRYPT_MODE, newKey, GCMParameterSpec(128, newIv))
+            FileOutputStream(target).use { fos ->
+                fos.write(newIv)
+                javax.crypto.CipherOutputStream(fos, encipher).use { cos ->
+                    javax.crypto.CipherInputStream(fis, decipher).copyTo(cos)
+                }
+            }
+        }
+    }
+
+    fun changePassword(oldPassword: String, newPassword: String): Boolean {
+        val oldKey = verifyPassword(oldPassword) ?: return false
+        val staging = File(context.filesDir, "vault_rekey_${System.currentTimeMillis()}")
+        return try {
+            val stagedData = File(staging, "data").apply { mkdirs() }
+            val stagedThumbs = File(staging, "thumbs").apply { mkdirs() }
+
+            val salt = ByteArray(SALT_SIZE).apply { SecureRandom().nextBytes(this) }
+            val newKey = deriveKey(newPassword, salt)
+
+            val dataFiles = getEncryptedFiles().filter { it.isFile }
+            dataFiles.forEach { reencrypt(it, File(stagedData, it.name), oldKey, newKey) }
+
+            val thumbFiles = thumbnailFolder.listFiles()?.filter { it.isFile } ?: emptyList()
+            thumbFiles.forEach {
+                try {
+                    reencrypt(it, File(stagedThumbs, it.name), oldKey, newKey)
+                } catch (e: Exception) {
+                    File(stagedThumbs, it.name).delete()
+                }
+            }
+
+            val iv = ByteArray(IV_SIZE).apply { SecureRandom().nextBytes(this) }
+            val cipher = Cipher.getInstance("AES/GCM/NoPadding")
+            cipher.init(Cipher.ENCRYPT_MODE, newKey, GCMParameterSpec(128, iv))
+            val stagedConfig = File(staging, CONFIG_FILE)
+            FileOutputStream(stagedConfig).use { fos ->
+                fos.write(salt)
+                fos.write(iv)
+                fos.write(cipher.doFinal("VAULT_OPEN".toByteArray()))
+            }
+
+            thumbFiles.forEach { it.delete() }
+            stagedThumbs.listFiles()?.forEach { it.copyTo(File(thumbnailFolder, it.name), overwrite = true) }
+            stagedData.listFiles()?.forEach { it.copyTo(File(encryptedFolder, it.name), overwrite = true) }
+            stagedConfig.copyTo(configFile, overwrite = true)
+
+            masterKey = newKey
+            clearCache()
+            true
+        } catch (e: Exception) {
+            e.printStackTrace()
+            false
+        } finally {
+            staging.deleteRecursively()
+        }
+    }
+
+    fun lock() {
+        masterKey = null
+    }
+
+    fun isUnlocked(): Boolean = masterKey != null
+
+    private fun readFully(stream: InputStream, buffer: ByteArray): Boolean {
+        var offset = 0
+        while (offset < buffer.size) {
+            val read = stream.read(buffer, offset, buffer.size - offset)
+            if (read < 0) return false
+            offset += read
+        }
+        return true
+    }
+
+    private fun deriveKey(password: String, salt: ByteArray): SecretKey {
+        val factory = SecretKeyFactory.getInstance(PBKDF2_ALGORITHM)
+        val spec = PBEKeySpec(password.toCharArray(), salt, ITERATIONS, KEY_LENGTH)
+        val intermediate = factory.generateSecret(spec).encoded
+        return SecretKeySpec(intermediate, "AES")
+    }
+
+    private fun resolveVaultFile(fileName: String): File {
+        val sanitized = fileName.replace("/", "_").replace("\\", "_").replace("..", "_").trim()
+        if (sanitized.isBlank() || sanitized.equals(".", ignoreCase = true)) {
+            throw IllegalArgumentException("Invalid file name: $fileName")
+        }
+        val resolved = File(encryptedFolder, sanitized).canonicalFile
+        val base = encryptedFolder.canonicalFile
+        if (resolved != base && !resolved.path.startsWith("${base.path}${File.separator}")) {
+            throw SecurityException("Path traversal detected: $fileName")
+        }
+        return resolved
+    }
+
+    fun encryptFile(sourceUri: Uri, fileName: String) {
+        val key = masterKey ?: throw IllegalStateException("Vault is locked")
+        val destinationFile = resolveVaultFile(fileName)
+
+        generateThumbnail(sourceUri, fileName)
+
+        try {
+            context.contentResolver.openInputStream(sourceUri)?.use { inputStream ->
+                val iv = ByteArray(IV_SIZE).apply { SecureRandom().nextBytes(this) }
+                val cipher = Cipher.getInstance("AES/GCM/NoPadding")
+                cipher.init(Cipher.ENCRYPT_MODE, key, GCMParameterSpec(128, iv))
+
+                FileOutputStream(destinationFile).use { fos ->
+                    fos.write(iv)
+                    javax.crypto.CipherOutputStream(fos, cipher).use { cos ->
+                        inputStream.copyTo(cos)
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            if (destinationFile.exists()) destinationFile.delete()
+            throw e
+        }
+    }
+
+    fun getDecryptedInputStream(fileName: String): InputStream {
+        val key = masterKey ?: throw IllegalStateException("Vault is locked")
+        val sourceFile = resolveVaultFile(fileName)
+
+        val fis = FileInputStream(sourceFile)
+        try {
+            val iv = ByteArray(IV_SIZE)
+            if (!readFully(fis, iv)) {
+                throw IOException("Invalid file format")
+            }
+
+            val cipher = Cipher.getInstance("AES/GCM/NoPadding")
+            cipher.init(Cipher.DECRYPT_MODE, key, GCMParameterSpec(128, iv))
+
+            return javax.crypto.CipherInputStream(fis, cipher)
+        } catch (e: Exception) {
+            fis.close()
+            throw e
+        }
+    }
+
+    fun decryptToOutputStream(fileName: String, outputStream: OutputStream) {
+        val key = masterKey ?: throw IllegalStateException("Vault is locked")
+        val sourceFile = resolveVaultFile(fileName)
+
+        FileInputStream(sourceFile).use { inputStream ->
+            val iv = ByteArray(IV_SIZE)
+            if (!readFully(inputStream, iv)) {
+                throw IOException("Invalid file format")
+            }
+
+            val cipher = Cipher.getInstance("AES/GCM/NoPadding")
+            cipher.init(Cipher.DECRYPT_MODE, key, GCMParameterSpec(128, iv))
+
+            val bufferSize = DEFAULT_BUFFER_SIZE * 8
+            var previousBuffer = ByteArray(bufferSize)
+            var previousCount = inputStream.read(previousBuffer)
+
+            if (previousCount == -1) {
+                val finalBytes = cipher.doFinal()
+                if (finalBytes.isNotEmpty()) {
+                    outputStream.write(finalBytes)
+                }
+                outputStream.flush()
+                return
+            }
+
+            while (true) {
+                val currentBuffer = ByteArray(bufferSize)
+                val currentCount = inputStream.read(currentBuffer)
+                if (currentCount == -1) {
+                    val finalBytes = cipher.doFinal(previousBuffer, 0, previousCount)
+                    if (finalBytes.isNotEmpty()) {
+                        outputStream.write(finalBytes)
+                    }
+                    break
+                }
+
+                val updatedBytes = cipher.update(previousBuffer, 0, previousCount)
+                if (updatedBytes != null && updatedBytes.isNotEmpty()) {
+                    outputStream.write(updatedBytes)
+                }
+                previousBuffer = currentBuffer
+                previousCount = currentCount
+            }
+            outputStream.flush()
+        }
+    }
+
+    fun deleteFile(fileName: String): Boolean {
+        thumbFileFor(fileName).delete()
+        return resolveVaultFile(fileName).delete()
+    }
+
+    fun renameFile(oldName: String, newName: String): Boolean {
+        val oldEncrypted = resolveVaultFile(oldName)
+        if (!oldEncrypted.exists()) return false
+        val newEncrypted = resolveVaultFile(newName)
+        if (oldName == newName) return true
+        if (newEncrypted.exists()) {
+            newEncrypted.delete()
+            thumbFileFor(newName).delete()
+        }
+        val renamed = oldEncrypted.renameTo(newEncrypted)
+        if (renamed) {
+            val oldThumb = thumbFileFor(oldName)
+            if (oldThumb.exists()) {
+                oldThumb.renameTo(thumbFileFor(newName))
+            }
+        }
+        return renamed
+    }
+
+    fun getEncryptedFiles(): List<File> {
+        return encryptedFolder.listFiles()?.filter {
+            !it.name.startsWith(".") && it.name != CONFIG_FILE
+        } ?: emptyList()
+    }
+
+    fun decryptToCache(fileName: String): File {
+        val sourceFile = resolveVaultFile(fileName)
+        val cacheDir = File(context.cacheDir, TEMP_DIR)
+        if (!cacheDir.exists()) cacheDir.mkdirs()
+
+        val tempFile = File(cacheDir, sourceFile.name)
+        if (tempFile.exists() && tempFile.length() > 0L && tempFile.lastModified() >= sourceFile.lastModified()) {
+            return tempFile
+        }
+        if (tempFile.exists()) tempFile.delete()
+
+        try {
+            tempFile.outputStream().use { outputStream ->
+                decryptToOutputStream(fileName, outputStream)
+            }
+            if (tempFile.length() <= 0L) {
+                tempFile.delete()
+                throw IOException("Decrypted file is empty")
+            }
+            tempFile.setLastModified(sourceFile.lastModified())
+            return tempFile
+        } catch (e: Exception) {
+            tempFile.delete()
+            throw e
+        }
+    }
+
+    fun clearCache() {
+        val cacheDir = File(context.cacheDir, TEMP_DIR)
+        if (cacheDir.exists()) {
+            cacheDir.deleteRecursively()
+        }
+    }
+
+    private fun generateThumbnail(uri: Uri, fileName: String) {
+        val key = masterKey ?: return
+        var mimeType = context.contentResolver.getType(uri)
+
+        if (mimeType == null) {
+            val extension = MimeTypeMap.getFileExtensionFromUrl(uri.toString())
+            mimeType = MimeTypeMap.getSingleton().getMimeTypeFromExtension(extension)
+        }
+
+        var bitmap: Bitmap? = null
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                if (mimeType?.startsWith("image/") == true || mimeType?.startsWith("video/") == true) {
+                    try {
+                        bitmap = context.contentResolver.loadThumbnail(uri, Size(512, 512), null)
+                    } catch (e: Exception) {}
+                }
+            }
+
+            if (bitmap == null && (mimeType?.startsWith("image/") == true || mimeType == null)) {
+                context.contentResolver.openInputStream(uri)?.use { input ->
+                    val options = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+                    BitmapFactory.decodeStream(input, null, options)
+                    if (options.outWidth > 0 && options.outHeight > 0) {
+                        context.contentResolver.openInputStream(uri)?.use { input2 ->
+                            options.inJustDecodeBounds = false
+                            options.inSampleSize = calculateInSampleSize(options, 512, 512)
+                            bitmap = BitmapFactory.decodeStream(input2, null, options)
+                        }
+                    }
+                }
+            }
+
+            if (bitmap == null) bitmap = getDefaultThumbnailForFileType(mimeType)
+
+            bitmap?.let {
+                saveThumbnail(it, fileName, key)
+                it.recycle()
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
+    private fun thumbFileFor(fileName: String): File {
+        val sanitized = fileName.replace("/", "_").replace("\\", "_").replace("..", "_").trim()
+        if (sanitized.isBlank() || sanitized.equals(".", ignoreCase = true)) {
+            throw IllegalArgumentException("Invalid file name: $fileName")
+        }
+        return File(thumbnailFolder, "$sanitized.thumb")
+    }
+
+    private fun saveThumbnail(bitmap: Bitmap, fileName: String, key: SecretKey) {
+        val thumbFile = thumbFileFor(fileName)
+        val iv = ByteArray(IV_SIZE).apply { SecureRandom().nextBytes(this) }
+        val cipher = Cipher.getInstance("AES/GCM/NoPadding")
+        cipher.init(Cipher.ENCRYPT_MODE, key, GCMParameterSpec(128, iv))
+
+        val stream = ByteArrayOutputStream()
+        val width = bitmap.width
+        val height = bitmap.height
+        val size = if (width > height) height else width
+        val x = (width - size) / 2
+        val y = (height - size) / 2
+
+        val cropped = Bitmap.createBitmap(bitmap, x, y, size, size)
+        cropped.compress(Bitmap.CompressFormat.JPEG, 70, stream)
+        val byteArray = stream.toByteArray()
+
+        FileOutputStream(thumbFile).use { fos ->
+            fos.write(iv)
+            javax.crypto.CipherOutputStream(fos, cipher).use { cos ->
+                cos.write(byteArray)
+            }
+        }
+        if (cropped != bitmap) cropped.recycle()
+    }
+
+    fun getThumbnail(fileName: String): Bitmap? {
+        val key = masterKey ?: return null
+        val thumbFile = thumbFileFor(fileName)
+        if (!thumbFile.exists()) return null
+
+        return try {
+            FileInputStream(thumbFile).use { fis ->
+                val iv = ByteArray(IV_SIZE)
+                if (!readFully(fis, iv)) return null
+
+                val cipher = Cipher.getInstance("AES/GCM/NoPadding")
+                cipher.init(Cipher.DECRYPT_MODE, key, GCMParameterSpec(128, iv))
+
+                val cis = javax.crypto.CipherInputStream(fis, cipher)
+                com.guruswarupa.launch.utils.SampledBitmap.fromBytes(cis.readBytes(), 512)
+            }
+        } catch (e: Exception) {
+            null
+        }
+    }
+
+    private fun getDefaultThumbnailForFileType(mimeType: String?): Bitmap? {
+        val bitmap = Bitmap.createBitmap(512, 512, Bitmap.Config.ARGB_8888)
+        val canvas = android.graphics.Canvas(bitmap)
+        val backgroundColor = when {
+            mimeType?.startsWith("audio/") == true -> android.graphics.Color.parseColor("#FF6200EE")
+            mimeType?.contains("pdf") == true -> android.graphics.Color.parseColor("#FFF44336")
+            mimeType?.startsWith("text/") == true -> android.graphics.Color.parseColor("#FF2196F3")
+            else -> android.graphics.Color.parseColor("#FF9E9E9E")
+        }
+        canvas.drawColor(backgroundColor)
+        val paint = android.graphics.Paint().apply {
+            color = android.graphics.Color.WHITE
+            textSize = 100f
+            textAlign = android.graphics.Paint.Align.CENTER
+        }
+        val iconText = when {
+            mimeType?.startsWith("audio/") == true -> "🎵"
+            mimeType?.contains("pdf") == true -> "📄"
+            mimeType?.startsWith("text/") == true -> "📝"
+            else -> "📁"
+        }
+        val y = canvas.height / 2f - (paint.descent() + paint.ascent()) / 2f
+        canvas.drawText(iconText, canvas.width / 2f, y, paint)
+        return bitmap
+    }
+
+    private fun calculateInSampleSize(options: BitmapFactory.Options, reqWidth: Int, reqHeight: Int): Int {
+        val (height: Int, width: Int) = options.outHeight to options.outWidth
+        var inSampleSize = 1
+        if (height > reqHeight || width > reqWidth) {
+            val halfHeight: Int = height / 2
+            val halfWidth: Int = width / 2
+            while (halfHeight / inSampleSize >= reqHeight && halfWidth / inSampleSize >= reqWidth) {
+                inSampleSize *= 2
+            }
+        }
+        return inSampleSize
+    }
+
+    fun writeVaultToZip(zipOut: java.util.zip.ZipOutputStream, prefix: String = "") {
+        encryptedFolder.listFiles()?.filter { it.isFile }?.forEach { file ->
+            zipOut.putNextEntry(java.util.zip.ZipEntry("${prefix}data/${file.name}"))
+            file.inputStream().use { it.copyTo(zipOut) }
+            zipOut.closeEntry()
+        }
+        thumbnailFolder.listFiles()?.filter { it.isFile }?.forEach { file ->
+            zipOut.putNextEntry(java.util.zip.ZipEntry("${prefix}thumbs/${file.name}"))
+            file.inputStream().use { it.copyTo(zipOut) }
+            zipOut.closeEntry()
+        }
+    }
+
+    fun exportVault(outputStream: OutputStream): Boolean {
+        if (!isVaultSetup()) return false
+        return try {
+            java.util.zip.ZipOutputStream(outputStream).use { zipOut ->
+                zipOut.setLevel(java.util.zip.Deflater.NO_COMPRESSION)
+                writeVaultToZip(zipOut)
+            }
+            true
+        } catch (e: Exception) {
+            e.printStackTrace()
+            false
+        }
+    }
+
+    fun newRestoreStagingDir(): File {
+        val dir = File(context.cacheDir, "vault_restore_${System.currentTimeMillis()}")
+        dir.deleteRecursively()
+        File(dir, "data").mkdirs()
+        File(dir, "thumbs").mkdirs()
+        return dir
+    }
+
+    /** Copies one backup entry (relative name like "data/x" or "thumbs/x") into the staging dir. Returns true if it was a vault entry. */
+    fun stageEntry(stagingDir: File, relativeName: String, input: InputStream): Boolean {
+        val group = when {
+            relativeName.startsWith("data/") -> "data"
+            relativeName.startsWith("thumbs/") -> "thumbs"
+            else -> return false
+        }
+        val name = relativeName.substringAfter('/')
+        if (name.isEmpty() || name.contains('/') || name.contains('\\') || name.contains("..")) return true
+        val groupDir = File(stagingDir, group)
+        val dest = File(groupDir, name)
+        if (dest.canonicalFile.parentFile != groupDir.canonicalFile) return true
+        FileOutputStream(dest).use { input.copyTo(it) }
+        return true
+    }
+
+    /** Replaces the current vault with the staged one. The staged data must contain a valid vault config. */
+    fun commitRestore(stagingDir: File): Boolean {
+        return try {
+            val stagedConfig = File(stagingDir, "data/$CONFIG_FILE")
+            if (!stagedConfig.exists() || stagedConfig.length() < SALT_SIZE + IV_SIZE + 16) return false
+
+            lock()
+            clearCache()
+            encryptedFolder.listFiles()?.forEach { it.deleteRecursively() }
+            thumbnailFolder.listFiles()?.forEach { it.deleteRecursively() }
+            encryptedFolder.mkdirs()
+            thumbnailFolder.mkdirs()
+
+            File(stagingDir, "data").listFiles()?.forEach { f ->
+                f.copyTo(File(encryptedFolder, f.name), overwrite = true)
+            }
+            File(stagingDir, "thumbs").listFiles()?.forEach { f ->
+                f.copyTo(File(thumbnailFolder, f.name), overwrite = true)
+            }
+            true
+        } catch (e: Exception) {
+            e.printStackTrace()
+            false
+        } finally {
+            stagingDir.deleteRecursively()
+        }
+    }
+
+    fun importVault(inputStream: InputStream): Boolean {
+        val staging = newRestoreStagingDir()
+        return try {
+            java.util.zip.ZipInputStream(inputStream).use { zipIn ->
+                var entry = zipIn.nextEntry
+                while (entry != null) {
+                    if (!entry.isDirectory) {
+                        stageEntry(staging, entry.name, zipIn)
+                    }
+                    zipIn.closeEntry()
+                    entry = zipIn.nextEntry
+                }
+            }
+            commitRestore(staging)
+        } catch (e: Exception) {
+            e.printStackTrace()
+            staging.deleteRecursively()
+            false
+        }
+    }
+}

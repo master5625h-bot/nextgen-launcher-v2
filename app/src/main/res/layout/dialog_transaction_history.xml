@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="20dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:layout_marginBottom="16dp">
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="@string/transaction_history"
+            android:textColor="?attr/appTextPrimary"
+            android:textSize="20sp"
+            android:textStyle="bold" />
+
+        <ImageButton
+            android:id="@+id/clear_all_transactions_button"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:background="@drawable/button_neutral_ripple"
+            android:src="@drawable/ic_delete"
+            android:tint="?attr/appIconTint"
+            android:contentDescription="@string/clear_all_transactions"
+            android:padding="8dp" />
+    </LinearLayout>
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/transaction_recycler_view"
+        android:layout_width="match_parent"
+        android:layout_height="400dp"
+        android:background="@drawable/input_field_background"
+        android:padding="8dp" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center"
+        android:layout_marginTop="16dp">
+
+        <Button
+            android:id="@+id/close_button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@drawable/button_neutral_ripple"
+            android:text="@string/support_thank_you_close"
+            android:textColor="?attr/appTextPrimary"
+            android:paddingHorizontal="32dp"
+            android:paddingVertical="12dp"
+            android:textSize="14sp" />
+
+    </LinearLayout>
+
+</LinearLayout>

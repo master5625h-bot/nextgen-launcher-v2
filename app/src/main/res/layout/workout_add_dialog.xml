@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="16dp">
+
+    
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/exercise_type"
+        style="@style/DialogFieldLabel"
+        android:layout_marginBottom="8dp" />
+
+    <RadioGroup
+        android:id="@+id/exercise_type_group"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_marginBottom="16dp">
+
+        <RadioButton
+            android:id="@+id/type_reps"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="@string/reps_count"
+            android:textColor="?attr/appTextPrimary"
+            android:checked="true"
+            android:buttonTint="?attr/appHighlight" />
+
+        <RadioButton
+            android:id="@+id/type_time"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="@string/time_stopwatch"
+            android:textColor="?attr/appTextPrimary"
+            android:buttonTint="?attr/appHighlight" />
+    </RadioGroup>
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/quick_add_presets"
+        style="@style/DialogFieldLabel"
+        android:layout_marginBottom="12dp" />
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:maxHeight="200dp"
+        android:layout_marginBottom="16dp">
+
+        <LinearLayout
+            android:id="@+id/presets_container"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical" />
+    </ScrollView>
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="?attr/appOutlineMuted"
+        android:layout_marginVertical="12dp" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/or_add_custom_exercise"
+        style="@style/DialogFieldLabel"
+        android:layout_marginBottom="8dp" />
+
+    <EditText
+        android:id="@+id/custom_exercise_input"
+        style="@style/DialogEditText"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="@string/exercise_name"
+        android:inputType="text"
+        android:textSize="14sp" />
+
+</LinearLayout>

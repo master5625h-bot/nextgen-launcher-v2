@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="20dp">
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/weather_settings_title"
+        android:textColor="?attr/appTextPrimary"
+        android:textSize="18sp"
+        android:textStyle="bold"
+        android:layout_marginBottom="16dp" />
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/location_city_country"
+        style="@style/DialogFieldLabel"
+        android:layout_marginBottom="4dp" />
+
+    <EditText
+        android:id="@+id/weather_location_input"
+        style="@style/DialogEditText"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="@string/e_g_london_uk"
+        android:inputType="text"
+        android:layout_marginBottom="16dp" />
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/temperature_unit"
+        style="@style/DialogFieldLabel"
+        android:layout_marginBottom="4dp" />
+
+    <RadioGroup
+        android:id="@+id/temperature_unit_group"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
+
+        <RadioButton
+            android:id="@+id/unit_celsius"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="@string/celsius"
+            android:textColor="?attr/appTextPrimary"
+            android:textSize="14sp" />
+
+        <RadioButton
+            android:id="@+id/unit_fahrenheit"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="@string/fahrenheit"
+            android:textColor="?attr/appTextPrimary"
+            android:textSize="14sp" />
+
+    </RadioGroup>
+
+</LinearLayout>

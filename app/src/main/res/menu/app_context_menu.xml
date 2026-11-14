@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:id="@+id/usage_header"
+        android:title="@string/app_context_usage_placeholder"
+        android:enabled="false" />
+
+    <item
+        android:id="@+id/toggle_session_timer"
+        android:title="@string/app_context_enable_session_timer" />
+
+    <item
+        android:id="@+id/app_info"
+        android:title="@string/app_context_app_info"
+        android:icon="@drawable/ic_settings" />
+
+    <item
+        android:id="@+id/share_app"
+        android:title="@string/app_context_share"
+        android:icon="@drawable/ic_share" />
+
+    <item
+        android:id="@+id/uninstall_app"
+        android:title="@string/app_context_uninstall"
+        android:icon="@drawable/ic_settings" />
+
+    <item
+        android:id="@+id/toggle_favorite"
+        android:title="@string/add_to_favorites_plain"
+        android:icon="@drawable/ic_add" />
+
+    <item
+        android:id="@+id/toggle_hide"
+        android:title="@string/hide_app_plain"
+        android:icon="@drawable/ic_settings" />
+</menu>

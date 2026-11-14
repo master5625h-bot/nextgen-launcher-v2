@@ -1,0 +1,330 @@
+package com.guruswarupa.launch.managers
+
+import com.guruswarupa.launch.R
+import android.content.pm.ResolveInfo
+import android.view.View
+import android.widget.AutoCompleteTextView
+import android.widget.Toast
+import androidx.recyclerview.widget.GridLayoutManager
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
+import com.guruswarupa.launch.AppAdapter
+import com.guruswarupa.launch.MainActivity
+import java.util.ConcurrentModificationException
+import java.util.concurrent.Executor
+import java.util.concurrent.RejectedExecutionException
+
+class AppListUIUpdater(
+    private val activity: MainActivity,
+    private val recyclerView: RecyclerView,
+    private var adapter: AppAdapter?,
+    private val appList: MutableList<ResolveInfo>,
+    private val fullAppList: MutableList<ResolveInfo>,
+    private val appListLoader: AppListLoader,
+    private val appListManager: AppListManager,
+    private val backgroundExecutor: Executor,
+    private val searchBox: AutoCompleteTextView
+) {
+    companion object {
+        private const val TAG = "AppListUIUpdater"
+    }
+    private var isGridMode: Boolean = false
+    private var preservedWorkProfileListOnce = false
+
+    fun setAdapter(adapter: AppAdapter) {
+        this.adapter = adapter
+    }
+
+    fun setupCallbacks() {
+        try {
+            appListLoader.onAppListUpdated = { sortedList, filteredList, isFinal ->
+                try {
+                    val kidsModeManager = activity.kidsModeManager
+                    val kidsActive = kidsModeManager.isActive()
+                    val effectiveFilteredList = if (kidsActive) {
+                        filteredList.filter { kidsModeManager.isAppAllowed(it.activityInfo.packageName) }
+                    } else {
+                        filteredList
+                    }
+                    val effectiveSortedList = if (kidsActive) {
+                        val appOrderManager = activity.appOrderManager
+                        val byKey = filteredList.associateBy { appOrderManager.keyOf(it) }
+                        val expanded = mutableListOf<android.content.pm.ResolveInfo>()
+                        sortedList.forEach { entry ->
+                            if (appOrderManager.isFolderEntry(entry)) {
+                                val folder = activity.folderManager.findFolder(
+                                    com.guruswarupa.launch.models.Constants.Prefs.STOCK_HOME_FOLDERS,
+                                    appOrderManager.folderIdOf(entry)
+                                )
+                                folder?.appKeys?.forEach { key -> byKey[key]?.let { expanded.add(it) } }
+                            } else {
+                                expanded.add(entry)
+                            }
+                        }
+                        expanded.filter { kidsModeManager.isAppAllowed(it.activityInfo.packageName) }
+                            .distinctBy { appOrderManager.keyOf(it) }
+                    } else {
+                        sortedList
+                    }
+                    val listWithSeparators = appListManager.addSeparators(effectiveSortedList, activity.showOnlyFavoritesInitially)
+                    updateAppListUI(listWithSeparators, effectiveFilteredList, isFinal)
+
+                    activity.updateFastScrollerVisibility()
+                } catch (e: Exception) {
+                }
+            }
+            appListLoader.onAdapterNeedsUpdate = { isGrid ->
+                try {
+                    this.isGridMode = isGrid
+                    val columns = activity.getPreferredGridColumns()
+
+                    val layoutManager = if (isGrid) {
+                        val gridLayoutManager = GridLayoutManager(activity, columns)
+                        gridLayoutManager.spanSizeLookup = object : GridLayoutManager.SpanSizeLookup() {
+                            override fun getSpanSize(position: Int): Int {
+                                try {
+                                    val viewType = adapter?.getItemViewType(position)
+                                    return if (viewType == AppAdapter.VIEW_TYPE_SEPARATOR ||
+                                               viewType == AppAdapter.VIEW_TYPE_SEPARATOR_SMALL) {
+                                        columns
+                                    } else {
+                                        1
+                                    }
+                                } catch (e: Exception) {
+                                    return 1
+                                }
+                            }
+                        }
+                        gridLayoutManager
+                    } else {
+                        LinearLayoutManager(activity)
+                    }
+
+                    recyclerView.layoutManager = layoutManager
+
+                    if (adapter != null) {
+                        adapter?.updateViewMode(isGrid)
+                    } else {
+                        val newAdapter = AppAdapter(activity, appList, searchBox, isGrid, activity, activity.sharedPreferences)
+                        adapter = newAdapter
+                        activity.adapter = newAdapter
+                        recyclerView.adapter = newAdapter
+                    }
+                    activity.updateFastScrollerVisibility()
+                } catch (e: Exception) {
+                }
+            }
+        } catch (e: Exception) {
+        }
+    }
+
+    fun updateAppListUI(
+        newAppList: List<ResolveInfo>,
+        newFullAppList: List<ResolveInfo>,
+        isFinal: Boolean = false
+    ) {
+        if (activity.isFinishing || activity.isDestroyed) return
+
+        try {
+            if (shouldKeepCurrentWorkProfileList(newAppList, newFullAppList)) {
+                preservedWorkProfileListOnce = true
+                appListLoader.loadApps(forceRefresh = true, fullAppList, appList, adapter)
+                return
+            }
+
+            if (newAppList.isNotEmpty() || !appListManager.isWorkProfileModeEnabled()) {
+                preservedWorkProfileListOnce = false
+            }
+
+            val deduplicatedFullAppList = newFullAppList.distinctBy { "${it.activityInfo.packageName}|${it.activityInfo.name}" }
+
+            synchronized(fullAppList) {
+                if (deduplicatedFullAppList !== fullAppList) {
+                    fullAppList.clear()
+                    fullAppList.addAll(deduplicatedFullAppList)
+                }
+            }
+
+            synchronized(appList) {
+                if (activity.appList !== appList) {
+                    appList.clear()
+                    appList.addAll(newAppList)
+                } else {
+                    activity.appList.clear()
+                    activity.appList.addAll(newAppList)
+                }
+            }
+
+            val pendingScroll = activity.pendingScrollToTop
+            activity.pendingScrollToTop = false
+            val targetPos = if (pendingScroll) {
+                newAppList.indexOfFirst {
+                    !(it.activityInfo.packageName == AppAdapter.SEPARATOR_PACKAGE &&
+                        it.activityInfo.name?.startsWith("all_apps_top_spacer_") == true)
+                }.coerceAtLeast(0)
+            } else {
+                0
+            }
+            fun jumpToTarget() {
+                recyclerView.stopScroll()
+                (recyclerView.layoutManager as? LinearLayoutManager)?.scrollToPositionWithOffset(targetPos, 0)
+                    ?: recyclerView.scrollToPosition(targetPos)
+            }
+            val currentAdapter = adapter
+            if (currentAdapter != null) {
+                val observer = object : androidx.recyclerview.widget.RecyclerView.AdapterDataObserver() {
+                    private fun fire() {
+                        currentAdapter.unregisterAdapterDataObserver(this)
+                        jumpToTarget()
+                        recyclerView.post { jumpToTarget() }
+                        recyclerView.postDelayed({ jumpToTarget() }, 120)
+                        recyclerView.postDelayed({ jumpToTarget() }, 400)
+                        if (pendingScroll) {
+                            recyclerView.postDelayed({ recyclerView.animate().alpha(1f).setDuration(80).start() }, 140)
+                        }
+                    }
+                    override fun onChanged() = fire()
+                    override fun onItemRangeChanged(positionStart: Int, itemCount: Int) = fire()
+                    override fun onItemRangeInserted(positionStart: Int, itemCount: Int) = fire()
+                    override fun onItemRangeRemoved(positionStart: Int, itemCount: Int) = fire()
+                    override fun onItemRangeMoved(fromPosition: Int, toPosition: Int, itemCount: Int) = fire()
+                }
+                if (pendingScroll) {
+                    recyclerView.animate().cancel()
+                    recyclerView.alpha = 0f
+                }
+                currentAdapter.registerAdapterDataObserver(observer)
+                recyclerView.postDelayed({
+                    try {
+                        currentAdapter.unregisterAdapterDataObserver(observer)
+                    } catch (_: IllegalStateException) {
+                    }
+                    if (recyclerView.alpha < 1f) recyclerView.animate().alpha(1f).setDuration(80).start()
+                }, 3000)
+                currentAdapter.updateAppList(newAppList)
+            }
+
+            val isEmpty = newAppList.isEmpty()
+            recyclerView.visibility = if (isEmpty) View.GONE else View.VISIBLE
+            if (isEmpty) {
+
+                val isStockHome = com.guruswarupa.launch.utils.LayoutMode.isStock(activity.sharedPreferences) &&
+                    activity.showOnlyFavoritesInitially
+                if (isStockHome) {
+                    activity.views.appListEmptyState.text = ""
+                } else {
+                    activity.views.appListEmptyState.setText(R.string.app_list_no_apps_found)
+                }
+            }
+            activity.views.appListEmptyState.visibility = if (isEmpty) View.VISIBLE else View.GONE
+            activity.updateFastScrollerVisibility()
+
+            activity.updateAppSearchManager(newFullAppList, newAppList)
+        } catch (e: NullPointerException) {
+
+        } catch (e: ConcurrentModificationException) {
+
+        } catch (e: Exception) {
+        }
+    }
+
+    private fun shouldKeepCurrentWorkProfileList(
+        newAppList: List<ResolveInfo>,
+        newFullAppList: List<ResolveInfo>
+    ): Boolean {
+        try {
+            if (preservedWorkProfileListOnce) return false
+            if (!appListManager.isWorkProfileModeEnabled()) return false
+            if (newAppList.isNotEmpty()) return false
+            if (appList.isEmpty()) return false
+
+            val currentHasVisibleWorkApps = appList.any { app ->
+                try {
+                    val packageName = app.activityInfo.packageName
+                    packageName != "com.guruswarupa.launch.SEPARATOR" &&
+                        !packageName.startsWith("launcher_") &&
+                        appListManager.isWorkProfileApp(app)
+                } catch (e: Exception) {
+                    false
+                }
+            }
+            if (!currentHasVisibleWorkApps) return false
+
+            val incomingHasWorkApps = newFullAppList.any { app ->
+                try {
+                    appListManager.isWorkProfileApp(app)
+                } catch (e: Exception) {
+                    false
+                }
+            }
+
+            return !incomingHasWorkApps
+        } catch (e: Exception) {
+            return false
+        }
+    }
+
+    fun filterAppsWithoutReload() {
+        if (fullAppList.isEmpty()) {
+            appListLoader.loadApps(forceRefresh = false, fullAppList, appList, adapter)
+            return
+        }
+
+        try {
+            backgroundExecutor.execute {
+                try {
+                    val focusMode = appListManager.getFocusMode()
+                    val workspaceMode = appListManager.getWorkspaceMode()
+
+                    val currentFullList = synchronized(fullAppList) {
+                        ArrayList(fullAppList)
+                    }
+                    val sortedFinalList = appListManager.prepareSortedList(currentFullList, focusMode, workspaceMode, activity.showOnlyFavoritesInitially)
+                    val listWithSeparators = appListManager.addSeparators(sortedFinalList, activity.showOnlyFavoritesInitially)
+
+                    activity.runOnUiThread {
+                        updateAppListUI(listWithSeparators, currentFullList, isFinal = true)
+                    }
+                } catch (e: IllegalStateException) {
+                    activity.runOnUiThread {
+                        Toast.makeText(activity, activity.getString(R.string.toast_unable_to_filter_apps_ui_state_changed), Toast.LENGTH_SHORT).show()
+                    }
+                } catch (e: NullPointerException) {
+                    activity.runOnUiThread {
+                        Toast.makeText(activity, activity.getString(R.string.toast_filtering_error_data_inconsistency_detected), Toast.LENGTH_SHORT).show()
+
+                        appListLoader.loadApps(forceRefresh = true, fullAppList, appList, adapter)
+                    }
+                } catch (e: IndexOutOfBoundsException) {
+                    activity.runOnUiThread {
+                        Toast.makeText(activity, activity.getString(R.string.toast_filtering_error_list_corruption_detected), Toast.LENGTH_SHORT).show()
+
+                        appListLoader.loadApps(forceRefresh = true, fullAppList, appList, adapter)
+                    }
+                } catch (e: Exception) {
+                    activity.runOnUiThread {
+                        val errorType = when (e) {
+                            is IndexOutOfBoundsException -> "Index error"
+                            is NullPointerException -> "Null reference"
+                            is IllegalStateException -> "State error"
+                            else -> "Unknown error"
+                        }
+                        Toast.makeText(activity, activity.getString(R.string.toast_filtering_error, errorType, e.message?.take(50) ?: "Unknown"), Toast.LENGTH_SHORT).show()
+                    }
+                }
+            }
+        } catch (e: RejectedExecutionException) {
+            Toast.makeText(activity, activity.getString(R.string.toast_unable_to_filter_apps_task_queue_full), Toast.LENGTH_SHORT).show()
+        } catch (e: Exception) {
+            Toast.makeText(activity, activity.getString(R.string.toast_unable_to_filter_apps_internal_error), Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    fun refreshAppsForFocusMode() {
+        appListLoader.loadApps(forceRefresh = true, fullAppList, appList, adapter)
+    }
+
+    fun refreshAppsForWorkspace() {
+        appListLoader.loadApps(forceRefresh = true, fullAppList, appList, adapter)
+    }
+}

@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="16dp">
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        style="@style/DialogFieldLabel"
+        android:text="@string/title"
+        android:layout_marginBottom="4dp" />
+
+    <EditText
+        android:id="@+id/countdown_title_input"
+        style="@style/DialogEditText"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="@string/enter_countdown_title"
+        android:layout_marginBottom="16dp"
+        android:inputType="text" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        style="@style/DialogFieldLabel"
+        android:text="@string/date"
+        android:layout_marginBottom="4dp" />
+
+    <EditText
+        android:id="@+id/countdown_date_input"
+        style="@style/DialogEditText"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="@string/select_date"
+        android:layout_marginBottom="16dp"
+        android:focusable="false"
+        android:clickable="true" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        style="@style/DialogFieldLabel"
+        android:text="@string/time"
+        android:layout_marginBottom="4dp" />
+
+    <EditText
+        android:id="@+id/countdown_time_input"
+        style="@style/DialogEditText"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="@string/select_time"
+        android:layout_marginBottom="16dp"
+        android:focusable="false"
+        android:clickable="true" />
+
+    <Button
+        android:id="@+id/from_calendar_button"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/select_from_calendar"
+        android:textColor="?attr/appTextPrimary"
+        android:background="@drawable/button_neutral_ripple"
+        android:paddingHorizontal="16dp"
+        android:paddingVertical="12dp" />
+
+</LinearLayout>

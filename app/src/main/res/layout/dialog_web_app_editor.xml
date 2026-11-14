@@ -1,0 +1,231 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:overScrollMode="never"
+    android:scrollbars="none">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:paddingHorizontal="2dp"
+        android:paddingTop="2dp">
+
+        <FrameLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <EditText
+                android:id="@+id/web_app_url_input"
+                android:layout_width="match_parent"
+                android:layout_height="52dp"
+                android:background="@drawable/web_app_search_field_background"
+                android:hint="@string/web_app_url_hint"
+                android:imeOptions="actionSearch"
+                android:inputType="textUri"
+                android:maxLines="1"
+                android:paddingStart="18dp"
+                android:paddingEnd="56dp"
+                android:textColor="?attr/appTextPrimary"
+                android:textColorHint="?attr/appTextHint"
+                android:textSize="16sp" />
+
+            <ImageButton
+                android:id="@+id/web_app_search_button"
+                android:layout_width="44dp"
+                android:layout_height="44dp"
+                android:layout_gravity="end|center_vertical"
+                android:layout_marginEnd="4dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="@string/web_app_search_description"
+                android:padding="12dp"
+                android:src="@drawable/ic_search"
+                android:tint="?attr/appAccent" />
+
+            <ProgressBar
+                android:id="@+id/web_app_search_progress"
+                android:layout_width="22dp"
+                android:layout_height="22dp"
+                android:layout_gravity="end|center_vertical"
+                android:layout_marginEnd="15dp"
+                android:indeterminate="true"
+                android:visibility="gone" />
+        </FrameLayout>
+
+        <LinearLayout
+            android:id="@+id/web_app_results_container"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:orientation="vertical"
+            android:visibility="gone">
+
+            <ScrollView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:maxHeight="260dp"
+                android:overScrollMode="never"
+                android:scrollbars="none">
+
+                <LinearLayout
+                    android:id="@+id/web_app_results_list"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:divider="?android:attr/dividerVertical"
+                    android:orientation="vertical"
+                    android:showDividers="middle" />
+            </ScrollView>
+
+            <TextView
+                android:id="@+id/web_app_results_empty"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:alpha="0.7"
+                android:padding="14dp"
+                android:text="@string/web_app_no_results"
+                android:textColor="?attr/appTextPrimary"
+                android:textSize="13sp"
+                android:visibility="gone" />
+        </LinearLayout>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="4dp"
+            android:layout_marginTop="18dp"
+            android:alpha="0.65"
+            android:text="@string/web_app_label_name"
+            android:textColor="?attr/appTextPrimary"
+            android:textSize="12sp"
+            android:textStyle="bold" />
+
+        <EditText
+            android:id="@+id/web_app_name_input"
+            android:layout_width="match_parent"
+            android:layout_height="52dp"
+            android:layout_marginTop="6dp"
+            android:background="@drawable/web_app_search_field_background"
+            android:hint="@string/web_app_name_hint"
+            android:inputType="textCapWords"
+            android:maxLines="1"
+            android:paddingHorizontal="18dp"
+            android:textColor="?attr/appTextPrimary"
+            android:textColorHint="?attr/appTextHint"
+            android:textSize="16sp" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="@string/web_app_view_mode"
+            android:textColor="?attr/appTextPrimary"
+            android:textSize="14sp" />
+
+        <RadioGroup
+            android:id="@+id/web_app_mode_group"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:orientation="horizontal">
+
+            <RadioButton
+                android:id="@+id/web_app_mode_auto"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:buttonTint="?attr/appIconTint"
+                android:text="@string/web_app_mode_auto"
+                android:textColor="?attr/appTextPrimary"
+                android:textSize="13sp" />
+
+            <RadioButton
+                android:id="@+id/web_app_mode_mobile"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:buttonTint="?attr/appIconTint"
+                android:text="@string/web_app_mode_mobile"
+                android:textColor="?attr/appTextPrimary"
+                android:textSize="13sp" />
+
+            <RadioButton
+                android:id="@+id/web_app_mode_desktop"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:buttonTint="?attr/appIconTint"
+                android:text="@string/web_app_mode_desktop"
+                android:textColor="?attr/appTextPrimary"
+                android:textSize="13sp" />
+        </RadioGroup>
+
+        <TextView
+            android:id="@+id/web_app_advanced_toggle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="14dp"
+            android:background="?attr/selectableItemBackground"
+            android:paddingHorizontal="4dp"
+            android:paddingVertical="8dp"
+            android:text="@string/web_app_advanced_show"
+            android:textColor="?attr/appAccent"
+            android:textSize="13sp"
+            android:textStyle="bold" />
+
+        <LinearLayout
+            android:id="@+id/web_app_advanced_container"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:visibility="gone">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:paddingHorizontal="4dp">
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/block_external_redirects"
+                        android:textColor="?attr/appTextPrimary"
+                        android:textSize="14sp" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="2dp"
+                        android:alpha="0.6"
+                        android:text="@string/prevent_navigation_to_external_domains"
+                        android:textColor="?attr/appTextPrimary"
+                        android:textSize="12sp" />
+                </LinearLayout>
+
+                <androidx.appcompat.widget.SwitchCompat
+                    android:id="@+id/web_app_block_redirects_switch"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content" />
+            </LinearLayout>
+
+            <CheckBox
+                android:id="@+id/web_app_allow_http_checkbox"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:buttonTint="?attr/appIconTint"
+                android:text="@string/allow_http_unencrypted_connection"
+                android:textColor="?attr/appTextPrimary"
+                android:textSize="13sp" />
+        </LinearLayout>
+    </LinearLayout>
+</ScrollView>

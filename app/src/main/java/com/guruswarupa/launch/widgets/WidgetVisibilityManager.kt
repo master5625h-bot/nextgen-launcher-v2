@@ -1,0 +1,455 @@
+package com.guruswarupa.launch.widgets
+
+import android.app.Activity
+import android.appwidget.AppWidgetHostView
+import android.animation.LayoutTransition
+import android.view.DragEvent
+import android.view.View
+import android.view.ViewGroup
+import android.widget.ImageView
+import android.widget.LinearLayout
+import androidx.core.widget.NestedScrollView
+import com.guruswarupa.launch.MainActivity
+import com.guruswarupa.launch.managers.WidgetConfigurationManager
+
+class WidgetVisibilityManager(
+    private val activity: Activity,
+    private val widgetConfigurationManager: WidgetConfigurationManager
+) {
+    companion object {
+        private const val TAG = "WidgetVisibilityManager"
+    }
+
+    private val DRAG_EDGE_PX = 80 * activity.resources.displayMetrics.density
+    private val DRAG_SCROLL_STEP_PX = (14 * activity.resources.displayMetrics.density).toInt()
+    private val widgetViewCache = mutableMapOf<String, View>()
+    private var originalLayoutTransition: LayoutTransition? = null
+
+    fun clearCache() {
+        widgetViewCache.clear()
+    }
+
+    fun update(
+        yearProgressWidget: YearProgressWidget? = null,
+        githubContributionWidget: GithubContributionWidget? = null
+    ) {
+        widgetConfigurationManager.forceRefresh()
+
+        val widgets = widgetConfigurationManager.getWidgetOrder()
+        val widgetMap = widgets.associateBy { it.id }
+
+        val hasEnabledWidgets = widgets.any { it.enabled }
+        val emptyState = activity.findViewById<View>(com.guruswarupa.launch.R.id.widgets_empty_state)
+        emptyState?.visibility = if (hasEnabledWidgets) View.GONE else View.VISIBLE
+
+        val failedWidgets = mutableListOf<String>()
+
+        failedWidgets.addAll(updateSimpleWidgetContainers(widgetMap))
+
+        yearProgressWidget?.setGlobalVisibility(widgetMap["year_progress_widget_container"]?.enabled == true)
+        githubContributionWidget?.setGlobalVisibility(widgetMap["github_contributions_widget_container"]?.enabled == true)
+
+        failedWidgets.addAll(reorderWidgetsInLayout(widgets, widgetMap))
+
+        if (failedWidgets.isNotEmpty()) {
+            scheduleRetry(yearProgressWidget, githubContributionWidget)
+        } else {
+            retryCount = 0
+        }
+    }
+
+    private fun updateSimpleWidgetContainers(widgetMap: Map<String, WidgetConfigurationManager.WidgetInfo>): List<String> {
+        val failedWidgets = mutableListOf<String>()
+        val simpleWidgets = listOf(
+            "calendar_events_widget_container" to com.guruswarupa.launch.R.id.calendar_events_widget_container,
+            "countdown_widget_container" to com.guruswarupa.launch.R.id.countdown_widget_container,
+            "dns_widget_container" to com.guruswarupa.launch.R.id.dns_widget_container,
+            "note_widget_container" to com.guruswarupa.launch.R.id.note_widget_container,
+            "battery_health_widget_container" to com.guruswarupa.launch.R.id.battery_health_widget_container,
+            "physical_activity_widget_container" to com.guruswarupa.launch.R.id.physical_activity_widget_container,
+            "compass_widget_container" to com.guruswarupa.launch.R.id.compass_widget_container,
+            "pressure_widget_container" to com.guruswarupa.launch.R.id.pressure_widget_container,
+            "temperature_widget_container" to com.guruswarupa.launch.R.id.temperature_widget_container,
+            "weather_forecast_widget_container" to com.guruswarupa.launch.R.id.weather_forecast_widget_container,
+            "noise_decibel_widget_container" to com.guruswarupa.launch.R.id.noise_decibel_widget_container,
+            "finance_widget" to com.guruswarupa.launch.R.id.finance_widget,
+            "network_stats_widget_container" to com.guruswarupa.launch.R.id.network_stats_widget_container,
+            "device_info_widget_container" to com.guruswarupa.launch.R.id.device_info_widget_container,
+            "weekly_usage_widget" to com.guruswarupa.launch.R.id.weekly_usage_widget,
+            "github_contributions_widget_container" to com.guruswarupa.launch.R.id.github_contributions_widget_container,
+        )
+
+        simpleWidgets.forEach { (widgetId, _) ->
+            val view = getWidgetViewById(widgetId)
+            if (view != null) {
+                view.visibility = if (widgetMap[widgetId]?.enabled == true) View.VISIBLE else View.GONE
+            } else if (widgetMap.containsKey(widgetId)) {
+                failedWidgets.add(widgetId)
+            }
+        }
+
+        listOf(
+            "workout_widget_container",
+            "calculator_widget_container",
+            "todo_recycler_view"
+        ).forEach { widgetId ->
+            val view = getWidgetViewById(widgetId)
+            if (view != null) {
+                view.visibility = if (widgetMap[widgetId]?.enabled == true) View.VISIBLE else View.GONE
+            } else if (widgetMap.containsKey(widgetId)) {
+                failedWidgets.add(widgetId)
+            }
+        }
+
+        return failedWidgets
+    }
+
+    private fun reorderWidgetsInLayout(
+        widgets: List<WidgetConfigurationManager.WidgetInfo>,
+        widgetMap: Map<String, WidgetConfigurationManager.WidgetInfo>
+    ): List<String> {
+        val failedWidgets = mutableListOf<String>()
+        val contentLayout = activity.findViewById<LinearLayout>(com.guruswarupa.launch.R.id.drawer_content_layout)
+        contentLayout?.let { layout ->
+
+            for (i in 0 until layout.childCount) {
+                val child = layout.getChildAt(i)
+                val tag = child.tag
+                if (tag is Int) {
+                    widgetViewCache["system_widget_$tag"] = child
+                }
+            }
+
+            val viewMap = mutableMapOf<String, View>()
+            widgets.forEach { widget ->
+                val view = if (widget.isSystemWidget) {
+                    widgetViewCache[widget.id] ?: run {
+                        val widgetIdNum = widget.id.removePrefix("system_widget_").toIntOrNull()
+                        if (widgetIdNum != null) layout.findViewWithTag<View>(widgetIdNum) else null
+                    }
+                } else {
+
+                    getWidgetViewById(widget.id)
+                }
+
+                if (view != null) {
+                    viewMap[widget.id] = view
+                    widgetViewCache[widget.id] = view
+                } else if (!widget.isSystemWidget) {
+                    failedWidgets.add(widget.id)
+                }
+            }
+
+            val nonWidgetViews = mutableListOf<View>()
+            for (i in 0 until layout.childCount) {
+                val child = layout.getChildAt(i)
+                if (!viewMap.values.contains(child)) {
+                    nonWidgetViews.add(child)
+                }
+            }
+
+            val animateLayoutChanges = layout.layoutTransition
+            layout.layoutTransition = null
+
+            layout.removeAllViews()
+
+            val hasEnabledWidgets = widgets.any { it.enabled }
+            nonWidgetViews.forEach {
+
+                val isEmptyState = it.id == com.guruswarupa.launch.R.id.widgets_empty_state
+                if (!(isEmptyState && hasEnabledWidgets)) {
+                    layout.addView(it)
+                }
+            }
+
+            widgets.forEach { widget ->
+                viewMap[widget.id]?.let { view ->
+
+                    if (widget.enabled) {
+                        view.visibility = View.VISIBLE
+                        if (view.parent == null) {
+                            layout.addView(view)
+                        }
+
+                        val dragStartListener = View.OnLongClickListener {
+                            val shadow = View.DragShadowBuilder(view)
+                            it.startDragAndDrop(null, shadow, widget.id, 0)
+                            true
+                        }
+                        view.setOnLongClickListener(dragStartListener)
+
+                        if (widget.isSystemWidget && view is ViewGroup) {
+                            for (i in 0 until view.childCount) {
+                                val child = view.getChildAt(i)
+                                if (child is AppWidgetHostView) {
+                                    child.setOnLongClickListener(dragStartListener)
+
+                                    child.requestLayout()
+                                    child.invalidate()
+                                }
+                            }
+                        }
+                    } else {
+
+                        view.visibility = View.GONE
+                        if (view.parent != null) {
+                            (view.parent as? ViewGroup)?.removeView(view)
+                        }
+                    }
+                }
+            }
+
+            layout.setOnDragListener { _, event ->
+                when (event.action) {
+                    DragEvent.ACTION_DRAG_STARTED -> {
+                        dragActive = true
+                        val draggedId = event.localState as? String
+                        val draggedView = viewMap[draggedId]
+                        draggedView?.visibility = View.INVISIBLE
+
+                        if (layout.layoutTransition != null) {
+                            originalLayoutTransition = layout.layoutTransition
+                        }
+                        layout.layoutTransition = null
+                        true
+                    }
+                    DragEvent.ACTION_DRAG_LOCATION -> {
+                        val draggedId = event.localState as? String
+                        if (draggedId != null) {
+                            val draggedView = viewMap[draggedId] ?: return@setOnDragListener true
+                            val scrollView = layout.parent as? NestedScrollView
+                            lastDragViewportY = event.y - (scrollView?.scrollY ?: 0)
+                            applyDragTranslations(layout, draggedView, event.y)
+                            if (scrollView != null && !autoScrollRunning) {
+                                autoScrollRunning = true
+                                layout.postOnAnimation(object : Runnable {
+                                    override fun run() {
+                                        if (!dragActive) {
+                                            autoScrollRunning = false
+                                            return
+                                        }
+                                        val viewportHeight = scrollView.height
+                                        val step = when {
+                                            lastDragViewportY < DRAG_EDGE_PX -> -DRAG_SCROLL_STEP_PX
+                                            lastDragViewportY > viewportHeight - DRAG_EDGE_PX -> DRAG_SCROLL_STEP_PX
+                                            else -> 0
+                                        }
+                                        if (step != 0) {
+                                            scrollView.scrollBy(0, step)
+                                            applyDragTranslations(layout, draggedView, lastDragViewportY + scrollView.scrollY)
+                                        }
+                                        layout.postOnAnimation(this)
+                                    }
+                                })
+                            }
+                        }
+                        true
+                    }
+                    DragEvent.ACTION_DROP -> {
+                        val draggedId = event.localState as? String
+                        if (draggedId != null) {
+                            val draggedView = viewMap[draggedId]
+                            if (draggedView != null) {
+
+                                resetDragTranslations(layout)
+
+                                val targetIndex = findTargetIndex(layout, event.y, draggedView)
+                                val currentIndex = layout.indexOfChild(draggedView)
+                                if (targetIndex != -1 && targetIndex != currentIndex) {
+                                    layout.removeView(draggedView)
+
+                                    val adjustedTarget = if (targetIndex > currentIndex) targetIndex - 1 else targetIndex
+                                    layout.addView(draggedView, adjustedTarget.coerceIn(0, layout.childCount))
+                                }
+                            }
+                            finalizeOrderFromLayout(layout, viewMap)
+                        }
+                        true
+                    }
+                    DragEvent.ACTION_DRAG_ENDED -> {
+                        dragActive = false
+                        val draggedId = event.localState as? String
+                        val view = viewMap[draggedId]
+                        view?.visibility = View.VISIBLE
+
+                        resetDragTranslations(layout)
+
+                        layout.layoutTransition = originalLayoutTransition
+
+                        if (event.result) {
+                            showResizeHandleIfSystemWidget(view)
+                        } else {
+                            update()
+                        }
+                        true
+                    }
+                    else -> true
+                }
+            }
+
+            layout.layoutTransition = animateLayoutChanges
+        } ?: run {
+        }
+
+        return failedWidgets
+    }
+
+    private var dragActive = false
+    private var autoScrollRunning = false
+    private var lastDragViewportY = 0f
+
+    private fun resetDragTranslations(layout: LinearLayout) {
+        for (i in 0 until layout.childCount) {
+            val child = layout.getChildAt(i)
+            child.animate().cancel()
+            child.translationY = 0f
+        }
+    }
+
+    private fun applyDragTranslations(layout: LinearLayout, draggedView: View, y: Float) {
+        val currentIndex = layout.indexOfChild(draggedView)
+        val targetIndex = findTargetIndex(layout, y, draggedView)
+        if (targetIndex == -1) return
+        val draggedHeight = draggedView.height.toFloat()
+
+        for (i in 0 until layout.childCount) {
+            val child = layout.getChildAt(i)
+            if (child == draggedView || child.id == com.guruswarupa.launch.R.id.widgets_empty_state) {
+                if (child.translationY != 0f) child.translationY = 0f
+                continue
+            }
+
+            val targetTranslation = when {
+                currentIndex < targetIndex && i > currentIndex && i < targetIndex -> -draggedHeight
+                currentIndex > targetIndex && i >= targetIndex && i < currentIndex -> draggedHeight
+                else -> 0f
+            }
+
+            if (child.translationY != targetTranslation) {
+                child.animate()
+                    .translationY(targetTranslation)
+                    .setDuration(150)
+                    .setInterpolator(android.view.animation.DecelerateInterpolator())
+                    .start()
+            }
+        }
+    }
+
+    private fun findTargetIndex(layout: LinearLayout, y: Float, draggedView: View): Int {
+        for (i in 0 until layout.childCount) {
+            val child = layout.getChildAt(i)
+            if (child == draggedView || child.id == com.guruswarupa.launch.R.id.widgets_empty_state) continue
+            if (y < child.top + child.height / 2f) {
+                return i
+            }
+        }
+        return layout.childCount
+    }
+
+    private fun finalizeOrderFromLayout(layout: LinearLayout, viewMap: Map<String, View>) {
+        widgetConfigurationManager.forceRefresh()
+        val allWidgets = widgetConfigurationManager.getWidgetOrder().toMutableList()
+        val enabledWidgetsInOrder = mutableListOf<String>()
+
+        val viewToIdMap = viewMap.entries.associate { it.value to it.key }
+
+        for (i in 0 until layout.childCount) {
+            val child = layout.getChildAt(i)
+            viewToIdMap[child]?.let { enabledWidgetsInOrder.add(it) }
+        }
+
+        val disabledWidgets = allWidgets.filter { !it.enabled }
+        val newOrder = mutableListOf<WidgetConfigurationManager.WidgetInfo>()
+
+        enabledWidgetsInOrder.forEach { id ->
+            allWidgets.find { it.id == id }?.let { newOrder.add(it) }
+        }
+        newOrder.addAll(disabledWidgets)
+
+        widgetConfigurationManager.saveWidgetOrder(newOrder)
+
+        (activity as? MainActivity)?.let { main ->
+            val systemWidgetIds = enabledWidgetsInOrder
+                .filter { it.startsWith("system_widget_") }
+                .mapNotNull { it.removePrefix("system_widget_").toIntOrNull() }
+
+            if (systemWidgetIds.isNotEmpty()) {
+                main.widgetManager.syncWidgetOrder(systemWidgetIds)
+            }
+        }
+
+        update()
+    }
+
+    private fun showResizeHandleIfSystemWidget(view: View?) {
+        if (view is ViewGroup) {
+
+            for (i in 0 until view.childCount) {
+                val child = view.getChildAt(i)
+                if (child is ImageView && child.contentDescription == "Resize widget") {
+                    child.visibility = View.VISIBLE
+
+                    child.postDelayed({ child.visibility = View.GONE }, 4000L)
+                    break
+                }
+            }
+        }
+    }
+
+    private fun getWidgetViewById(widgetId: String): View? {
+
+        widgetViewCache[widgetId]?.let { return it }
+
+        val view = when (widgetId) {
+            "calendar_events_widget_container" -> activity.findViewById(com.guruswarupa.launch.R.id.calendar_events_widget_container)
+            "countdown_widget_container" -> activity.findViewById(com.guruswarupa.launch.R.id.countdown_widget_container)
+            "dns_widget_container" -> activity.findViewById(com.guruswarupa.launch.R.id.dns_widget_container)
+            "note_widget_container" -> activity.findViewById(com.guruswarupa.launch.R.id.note_widget_container)
+            "battery_health_widget_container" -> activity.findViewById(com.guruswarupa.launch.R.id.battery_health_widget_container)
+            "physical_activity_widget_container" -> activity.findViewById(com.guruswarupa.launch.R.id.physical_activity_widget_container)
+            "compass_widget_container" -> activity.findViewById(com.guruswarupa.launch.R.id.compass_widget_container)
+            "pressure_widget_container" -> activity.findViewById(com.guruswarupa.launch.R.id.pressure_widget_container)
+            "temperature_widget_container" -> activity.findViewById(com.guruswarupa.launch.R.id.temperature_widget_container)
+            "weather_forecast_widget_container" -> activity.findViewById(com.guruswarupa.launch.R.id.weather_forecast_widget_container)
+            "noise_decibel_widget_container" -> activity.findViewById(com.guruswarupa.launch.R.id.noise_decibel_widget_container)
+            "workout_widget_container" -> activity.findViewById<View>(com.guruswarupa.launch.R.id.workout_widget_main_container)
+            "calculator_widget_container" -> activity.findViewById<View>(com.guruswarupa.launch.R.id.calculator_widget_main_container)
+            "todo_recycler_view" -> activity.findViewById<View>(com.guruswarupa.launch.R.id.todo_widget_main_container)
+            "finance_widget" -> activity.findViewById(com.guruswarupa.launch.R.id.finance_widget)
+            "weekly_usage_widget" -> activity.findViewById(com.guruswarupa.launch.R.id.weekly_usage_widget)
+            "github_contributions_widget_container" -> activity.findViewById(com.guruswarupa.launch.R.id.github_contributions_widget_container)
+            "network_stats_widget_container" -> activity.findViewById(com.guruswarupa.launch.R.id.network_stats_widget_container)
+            "device_info_widget_container" -> activity.findViewById(com.guruswarupa.launch.R.id.device_info_widget_container)
+            "year_progress_widget_container" -> activity.findViewById(com.guruswarupa.launch.R.id.year_progress_widget_container)
+            else -> {
+                null
+            }
+        }
+
+        if (view != null) {
+            widgetViewCache[widgetId] = view
+        }
+
+        return view
+    }
+
+    private var retryCount = 0
+    private val maxRetries = 5
+
+    private fun scheduleRetry(
+        yearProgressWidget: YearProgressWidget? = null,
+        githubContributionWidget: GithubContributionWidget? = null
+    ) {
+        if (retryCount >= maxRetries) {
+            retryCount = 0
+            return
+        }
+        retryCount++
+        android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
+            try {
+                update(yearProgressWidget, githubContributionWidget)
+            } catch (e: Exception) {
+            }
+        }, 500)
+    }
+}

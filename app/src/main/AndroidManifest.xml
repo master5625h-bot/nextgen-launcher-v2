@@ -1,0 +1,685 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <uses-feature
+        android:name="android.hardware.telephony"
+        android:required="false" />
+
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+    <uses-permission android:name="android.permission.EXPAND_STATUS_BAR" />
+    <uses-permission android:name="android.permission.CHANGE_WIFI_MULTICAST_STATE" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="32" />
+    <uses-permission android:name="android.permission.READ_MEDIA_AUDIO" />
+    <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="32" />
+    <uses-permission android:name="android.permission.REQUEST_DELETE_PACKAGES" />
+    <uses-permission android:name="android.permission.READ_CONTACTS" />
+
+    <uses-permission android:name="android.permission.CALL_PHONE" />
+    <uses-permission android:name="android.permission.SET_WALLPAPER" />
+    <uses-permission android:name="android.permission.READ_SMS" />
+    <uses-permission android:name="android.permission.SEND_SMS" />
+    <uses-permission android:name="android.permission.RECEIVE_SMS" />
+    <uses-permission android:name="android.permission.RECEIVE_MMS" />
+    <uses-permission android:name="android.permission.RECEIVE_WAP_PUSH" />
+    <uses-permission android:name="android.permission.WRITE_CONTACTS" />
+    <uses-permission android:name="android.permission.READ_CALL_LOG" />
+    <uses-permission android:name="android.permission.WRITE_CALL_LOG" />
+    <uses-permission android:name="android.permission.READ_PHONE_STATE" />
+    <uses-feature android:name="android.hardware.telephony" android:required="false" />
+    <uses-permission android:name="android.permission.READ_CALENDAR" />
+    <uses-permission android:name="android.permission.WRITE_CALENDAR" />
+    <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.PACKAGE_USAGE_STATS"
+        tools:ignore="ProtectedPermissions" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
+    <uses-permission android:name="android.permission.USE_EXACT_ALARM" />
+    <uses-permission android:name="android.permission.VIBRATE" />
+    <uses-permission android:name="android.permission.KILL_BACKGROUND_PROCESSES" />
+    <uses-permission android:name="android.permission.ACTIVITY_RECOGNITION" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_HEALTH" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SENSOR" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PROJECTION" />
+    <uses-permission android:name="android.permission.CAMERA" />
+    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <uses-permission android:name="android.permission.ACCESS_NOTIFICATION_POLICY" />
+    <uses-permission android:name="android.permission.WRITE_SETTINGS" tools:ignore="ProtectedPermissions" />
+    <uses-permission android:name="android.permission.WRITE_SECURE_SETTINGS" tools:ignore="ProtectedPermissions" />
+    <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES"
+        tools:ignore="QueryAllPackagesPermission" />
+    <uses-permission android:name="android.permission.USE_BIOMETRIC" />
+    <uses-permission android:name="android.permission.BLUETOOTH" android:maxSdkVersion="30" />
+    <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
+
+    <uses-feature android:name="android.hardware.sensor.stepcounter" android:required="false" />
+    <uses-feature android:name="android.hardware.sensor.stepdetector" android:required="false" />
+    <uses-feature android:name="android.hardware.sensor.accelerometer" android:required="false" />
+    <uses-feature android:name="android.hardware.sensor.magnetometer" android:required="false" />
+    <uses-feature android:name="android.hardware.sensor.pressure" android:required="false" />
+    <uses-feature android:name="android.hardware.sensor.proximity" android:required="false" />
+    <uses-feature android:name="android.hardware.sensor.ambient_temperature" android:required="false" />
+    <uses-feature android:name="android.hardware.sensor.temperature" android:required="false" />
+
+    
+    <queries>
+        <intent>
+            <action android:name="android.intent.action.MAIN" />
+            <category android:name="android.intent.category.LAUNCHER" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.SENDTO" />
+            <data android:scheme="mailto" />
+        </intent>
+    </queries>
+
+    <application
+        android:name=".LaunchApplication"
+        android:allowBackup="true"
+        android:dataExtractionRules="@xml/data_extraction_rules"
+        android:fullBackupContent="@xml/backup_rules"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.Launch"
+        android:networkSecurityConfig="@xml/network_security_config">
+
+        <service
+            android:name="androidx.appcompat.app.AppLocalesMetadataHolderService"
+            android:enabled="false"
+            android:exported="false"
+            tools:node="merge">
+            <meta-data
+                android:name="autoStoreLocales"
+                android:value="true" />
+        </service>
+
+        <activity
+            android:name=".ui.activities.FocusModeConfigActivity"
+            android:exported="false"
+            android:theme="@style/Theme.Launch"
+            android:excludeFromRecents="true" />
+
+        <activity
+            android:name=".ui.activities.WorkspaceConfigActivity"
+            android:exported="false"
+            android:theme="@style/Theme.Launch"
+            android:excludeFromRecents="true" />
+
+        <activity
+            android:name=".ui.activities.WorkspaceNameActivity"
+            android:exported="false"
+            android:theme="@style/Theme.Launch"
+            android:excludeFromRecents="true" />
+
+        <activity
+            android:name=".ui.activities.WorkspaceAppPickerActivity"
+            android:exported="false"
+            android:theme="@style/Theme.Launch"
+            android:excludeFromRecents="true" />
+
+        <activity
+            android:name=".MainActivity"
+            android:exported="true"
+            android:launchMode="singleTask"
+            android:stateNotNeeded="true"
+            android:theme="@style/Theme.Launch"
+            android:screenOrientation="fullSensor"
+            android:excludeFromRecents="true"
+            android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout|density">
+            <intent-filter android:priority="1000">
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.HOME" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <activity
+            android:name=".transfer.ui.TransferActivity"
+            android:exported="false"
+            android:label="@string/file_transfer_title"
+            android:theme="@style/Theme.Launch"
+            android:windowSoftInputMode="adjustResize" />
+
+        <activity
+            android:name=".ui.activities.SettingsActivity"
+            android:exported="false"
+            android:theme="@style/Theme.Launch.Settings"
+            android:label="@string/settings_app_name">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+            </intent-filter>
+        </activity>
+
+        <activity
+            android:name=".ui.activities.EncryptedVaultActivity"
+            android:exported="false"
+            android:theme="@style/Theme.Launch.Settings"
+            android:label="@string/vault_app_name"
+            android:excludeFromRecents="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+            </intent-filter>
+        </activity>
+
+        <activity
+            android:name=".ui.activities.NoteEditorActivity"
+            android:exported="false"
+            android:theme="@style/Theme.Launch.Settings"
+            android:label=""
+            android:excludeFromRecents="true" />
+
+        <service
+            android:name=".services.WebMediaService"
+            android:exported="false"
+            android:foregroundServiceType="mediaPlayback" />
+
+        <activity
+            android:name=".ui.activities.PhotoEditorActivity"
+            android:exported="false"
+            android:theme="@style/Theme.Launch.Media" />
+
+        <activity
+            android:name=".ui.activities.WebAppActivity"
+            android:exported="false"
+            android:supportsPictureInPicture="true"
+            android:theme="@style/Theme.Launch.Settings"
+            android:label="@string/app_name"
+            android:launchMode="standard"
+            android:autoRemoveFromRecents="false"
+            android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout|density" />
+
+        <activity
+            android:name=".ui.activities.WebAppSettingsActivity"
+            android:exported="false"
+            android:theme="@style/Theme.Launch.Settings" />
+
+        <activity
+            android:name=".ui.activities.RssFeedSettingsActivity"
+            android:exported="false"
+            android:theme="@style/Theme.Launch.Settings" />
+
+        <service
+            android:name=".managers.AppUsageMonitor"
+            android:enabled="true"
+            android:exported="false"
+            android:foregroundServiceType="specialUse">
+            <property android:name="android.app.PROPERTY_SPECIAL_USE_CATEGORY" android:value="App Usage Monitoring" />
+        </service>
+
+        <service
+            android:name=".services.PhysicalActivityTrackingService"
+            android:enabled="true"
+            android:exported="false"
+            android:foregroundServiceType="health" />
+
+        <service
+            android:name=".services.LockScreenService"
+            android:enabled="true"
+            android:exported="false"
+            android:foregroundServiceType="specialUse">
+            <property android:name="android.app.PROPERTY_SPECIAL_USE_CATEGORY" android:value="Custom lock screen shown over the system lock screen" />
+        </service>
+
+        <service
+            android:name=".services.ShakeDetectionService"
+            android:enabled="true"
+            android:exported="false"
+            android:foregroundServiceType="specialUse">
+            <property android:name="android.app.PROPERTY_SPECIAL_USE_CATEGORY" android:value="Shake detection for torch toggle" />
+        </service>
+
+        <service
+            android:name=".services.WalkDetectionService"
+            android:enabled="true"
+            android:exported="false"
+            android:foregroundServiceType="specialUse">
+            <property android:name="android.app.PROPERTY_SPECIAL_USE_CATEGORY" android:value="Walk detection auto-launch" />
+        </service>
+
+        <service
+            android:name=".services.ScreenDimmerService"
+            android:enabled="true"
+            android:exported="false"
+            android:foregroundServiceType="specialUse">
+            <property android:name="android.app.PROPERTY_SPECIAL_USE_CATEGORY" android:value="Screen Dimming" />
+        </service>
+
+        <service
+            android:name=".services.NightModeService"
+            android:enabled="true"
+            android:exported="false"
+            android:foregroundServiceType="specialUse">
+            <property android:name="android.app.PROPERTY_SPECIAL_USE_CATEGORY" android:value="Night Mode" />
+        </service>
+
+        <service
+            android:name=".services.FlipToDndService"
+            android:enabled="true"
+            android:exported="false"
+            android:foregroundServiceType="specialUse">
+            <property android:name="android.app.PROPERTY_SPECIAL_USE_CATEGORY" android:value="Flip to DND sensing" />
+        </service>
+
+        <service
+            android:name=".services.BackTapService"
+            android:enabled="true"
+            android:exported="false"
+            android:foregroundServiceType="specialUse">
+            <property android:name="android.app.PROPERTY_SPECIAL_USE_CATEGORY" android:value="Back tap gesture detection" />
+        </service>
+
+        <service
+            android:name=".services.ScreenRecordingService"
+            android:enabled="true"
+            android:exported="false"
+            android:foregroundServiceType="mediaProjection">
+            <property android:name="android.app.PROPERTY_SPECIAL_USE_CATEGORY" android:value="Screen Recording" />
+        </service>
+
+        <activity
+            android:name=".ui.activities.ScreenRecordPermissionActivity"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar"
+            android:excludeFromRecents="true"
+            android:exported="false" />
+
+        <activity
+            android:name=".ui.activities.ControlCenterConfigActivity"
+            android:exported="false"
+            android:theme="@style/Theme.Launch.Settings"
+            android:label="@string/control_center_config_title" />
+
+        <activity
+            android:name=".ui.activities.EdgePanelConfigActivity"
+            android:exported="false"
+            android:theme="@style/Theme.Launch.Settings"
+            android:label="@string/edge_panel_config_title" />
+
+        <receiver
+            android:name=".utils.TodoAlarmReceiver"
+            android:enabled="true"
+            android:exported="false" />
+
+        <receiver
+            android:name=".receivers.BootReceiver"
+            android:enabled="true"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.QUICKBOOT_POWERON" />
+            </intent-filter>
+        </receiver>
+
+        <receiver
+            android:name=".receivers.ScreenOffAdminReceiver"
+            android:description="@string/device_admin_description"
+            android:label="@string/device_admin_label"
+            android:permission="android.permission.BIND_DEVICE_ADMIN"
+            android:exported="true">
+            <meta-data
+                android:name="android.app.device_admin"
+                android:resource="@xml/device_admin_receiver" />
+            <intent-filter>
+                <action android:name="android.app.action.DEVICE_ADMIN_ENABLED" />
+            </intent-filter>
+        </receiver>
+
+        <receiver
+            android:name=".receivers.WorkProfileProvisioningReceiver"
+            android:description="@string/work_profile_admin_description"
+            android:label="@string/work_profile_admin_label"
+            android:permission="android.permission.BIND_DEVICE_ADMIN"
+            android:exported="true">
+            <meta-data
+                android:name="android.app.device_admin"
+                android:resource="@xml/work_profile_admin" />
+            <intent-filter>
+                <action android:name="android.app.action.DEVICE_ADMIN_ENABLED" />
+                <action android:name="android.app.action.PROFILE_PROVISIONING_COMPLETE" />
+            </intent-filter>
+        </receiver>
+
+        <receiver
+            android:name=".receivers.NotificationActionReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.guruswarupa.launch.TOGGLE_NIGHT_MODE" />
+                <action android:name="com.guruswarupa.launch.TOGGLE_DIMMER" />
+                <action android:name="com.guruswarupa.launch.TOGGLE_GRAYSCALE" />
+            </intent-filter>
+        </receiver>
+
+        <service
+            android:name=".services.ScreenLockAccessibilityService"
+            android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE"
+            android:label="@string/app_name"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.accessibilityservice.AccessibilityService" />
+            </intent-filter>
+            <meta-data
+                android:name="android.accessibilityservice"
+                android:resource="@xml/accessibility_service_config" />
+        </service>
+
+        <service
+            android:name=".services.LaunchNotificationListenerService"
+            android:label="@string/app_notification_access"
+            android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.service.notification.NotificationListenerService" />
+            </intent-filter>
+        </service>
+
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+        </provider>
+
+        <activity
+            android:name=".ui.activities.AppLockSettingsActivity"
+            android:exported="false"
+            android:theme="@style/Theme.Launch.Settings" />
+
+        <activity
+            android:name=".ui.activities.HiddenAppsSettingsActivity"
+            android:exported="false"
+            android:theme="@style/Theme.Launch.Settings" />
+
+        <activity
+            android:name=".ui.activities.PrivacyDashboardActivity"
+            android:exported="false"
+            android:theme="@style/Theme.Launch.Settings" />
+
+        <activity
+            android:name=".ui.activities.PermissionsActivity"
+            android:exported="false"
+            android:theme="@style/Theme.Launch.Settings" />
+
+        <activity
+            android:name=".ui.activities.AppDataDisclosureActivity"
+            android:exported="false"
+            android:theme="@style/Theme.Launch"
+            android:excludeFromRecents="true" />
+
+        <activity
+            android:name=".ui.activities.WidgetConfigurationActivity"
+            android:exported="false"
+            android:theme="@style/Theme.Launch.Settings" />
+
+        <activity
+            android:name=".ui.activities.AppTimerManagementActivity"
+            android:exported="false"
+            android:theme="@style/Theme.Launch.Settings" />
+
+        <activity
+            android:name=".ui.activities.UsageRecapActivity"
+            android:exported="false"
+            android:theme="@style/Theme.Launch.Settings"
+            android:label="@string/usage_recap_title" />
+
+        <activity
+            android:name=".ui.activities.SystemMonitorActivity"
+            android:exported="false"
+            android:theme="@style/Theme.Launch.Settings"
+            android:label="@string/app_system_monitor" />
+
+        <activity
+            android:name=".ui.activities.DocumentViewerActivity"
+            android:exported="true"
+            android:theme="@style/Theme.Launch.Document"
+            android:label="@string/app_document_viewer"
+            android:excludeFromRecents="false"
+            android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout|density">
+            <!-- PDF -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="application/pdf" />
+            </intent-filter>
+            <!-- Plain text / code -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="text/*" />
+            </intent-filter>
+            <!-- Office, OpenDocument, RTF, JSON/XML -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="application/vnd.openxmlformats-officedocument.wordprocessingml.document" />
+                <data android:mimeType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" />
+                <data android:mimeType="application/vnd.openxmlformats-officedocument.presentationml.presentation" />
+                <data android:mimeType="application/vnd.openxmlformats-officedocument.presentationml.slideshow" />
+                <data android:mimeType="application/vnd.oasis.opendocument.text" />
+                <data android:mimeType="application/vnd.oasis.opendocument.spreadsheet" />
+                <data android:mimeType="application/vnd.oasis.opendocument.presentation" />
+                <data android:mimeType="application/rtf" />
+                <data android:mimeType="application/json" />
+                <data android:mimeType="application/xml" />
+                <data android:mimeType="application/csv" />
+                <data android:mimeType="application/x-yaml" />
+                <data android:mimeType="application/javascript" />
+                <data android:mimeType="application/x-sh" />
+                <data android:mimeType="application/sql" />
+                <data android:mimeType="application/zip" />
+                <data android:mimeType="application/x-zip-compressed" />
+                <data android:mimeType="application/java-archive" />
+                <data android:mimeType="application/epub+zip" />
+                <data android:mimeType="application/x-tar" />
+                <data android:mimeType="application/msword" />
+                <data android:mimeType="application/vnd.ms-excel" />
+                <data android:mimeType="application/vnd.ms-powerpoint" />
+                <data android:mimeType="application/octet-stream" />
+            </intent-filter>
+        </activity>
+
+        <!-- Unexported alias for viewing vault files: DocumentViewerActivity itself must stay
+             exported to handle VIEW intents for PDFs/text from other apps, but that means any
+             app could otherwise launch it directly with EXTRA_VAULT_FILE_NAME and read decrypted
+             vault contents whenever the in-process vault happened to be unlocked. Routing vault
+             launches through this non-exported alias (same Activity class, same intent extras)
+             means only this app itself can trigger that code path. -->
+        <activity
+            android:name=".ui.activities.LockScreenActivity"
+            android:exported="false"
+            android:launchMode="singleInstance"
+            android:taskAffinity=""
+            android:excludeFromRecents="true"
+            android:showWhenLocked="true"
+            android:theme="@style/Theme.Launch.LockScreen" />
+
+
+
+        <activity
+            android:name=".ui.activities.FilesActivity"
+            android:taskAffinity="com.guruswarupa.launch.files"
+            android:exported="true"
+            android:label="@string/app_files"
+            android:icon="@drawable/ic_app_files"
+            android:theme="@style/Theme.Launch.Settings">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <activity
+            android:name=".ui.activities.GalleryActivity"
+            android:taskAffinity="com.guruswarupa.launch.gallery"
+            android:exported="true"
+            android:label="@string/app_gallery"
+            android:icon="@drawable/ic_app_gallery"
+            android:theme="@style/Theme.Launch.Settings">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <activity
+            android:name=".ui.activities.PlayerActivity"
+            android:taskAffinity="com.guruswarupa.launch.player"
+            android:exported="true"
+            android:label="@string/app_video_player"
+            android:icon="@drawable/ic_app_player"
+            android:theme="@style/Theme.Launch.Settings">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <activity
+            android:name=".ui.activities.OnboardingTourActivity"
+            android:exported="false"
+            android:theme="@style/Theme.Launch.Settings" />
+
+        <activity
+            android:name=".ui.activities.LaunchAppsActivity"
+            android:exported="false"
+            android:theme="@style/Theme.Launch.Settings" />
+
+        <activity
+            android:name=".ui.activities.BloatwareActivity"
+            android:exported="false"
+            android:theme="@style/Theme.Launch.Settings" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        <activity
+            android:name=".ui.activities.StorageAnalyzerActivity"
+            android:exported="false"
+            android:theme="@style/Theme.Launch.Settings" />
+
+        <activity
+            android:name=".ui.activities.PhotoViewerActivity"
+            android:exported="false"
+            android:theme="@style/Theme.Launch.Media"
+            android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout|density|keyboardHidden" />
+
+        <activity
+            android:name=".ui.activities.VideoPlayerActivity"
+            android:exported="false"
+            android:theme="@style/Theme.Launch.Media"
+            android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout|density|keyboardHidden"
+            android:supportsPictureInPicture="false" />
+
+        <activity-alias
+            android:name=".ui.activities.PhotoViewerExternalActivity"
+            android:exported="true"
+            android:label="@string/app_photos_viewer"
+            android:targetActivity=".ui.activities.PhotoViewerActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="image/*" />
+            </intent-filter>
+        </activity-alias>
+
+        <activity-alias
+            android:name=".ui.activities.VideoPlayerExternalActivity"
+            android:exported="true"
+            android:label="@string/app_player_viewer"
+            android:targetActivity=".ui.activities.VideoPlayerActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="video/*" />
+                <data android:mimeType="audio/*" />
+                <data android:mimeType="application/ogg" />
+                <data android:mimeType="application/x-mpegURL" />
+            </intent-filter>
+        </activity-alias>
+
+        <activity-alias
+            android:name=".ui.activities.VaultDocumentViewerActivity"
+            android:targetActivity=".ui.activities.DocumentViewerActivity"
+            android:exported="false" />
+
+            <activity android:name="com.guruswarupa.launch.apps.clock.AlarmRingActivity" android:theme="@style/Theme.Launch.Document" tools:node="merge" />
+
+        <activity android:name="com.guruswarupa.launch.apps.clock.ClockActivity" android:theme="@style/Theme.Launch.Settings" tools:node="merge" />
+
+        <activity android:name="com.guruswarupa.launch.apps.calendar.CalendarActivity" android:theme="@style/Theme.Launch.Settings" tools:node="merge" />
+
+        <activity android:name="com.guruswarupa.launch.apps.calculator.CalculatorActivity" android:theme="@style/Theme.Launch.Settings" tools:node="merge" />
+
+        <activity android:name="com.guruswarupa.launch.apps.messages.ConversationActivity" android:theme="@style/Theme.Launch.Settings" tools:node="merge" />
+
+        <activity android:name="com.guruswarupa.launch.apps.messages.MessagesActivity" android:theme="@style/Theme.Launch.Settings" tools:node="merge" />
+
+        <activity android:name="com.guruswarupa.launch.apps.phone.InCallActivity" android:theme="@style/Theme.Launch.Settings" tools:node="merge" />
+
+        <activity android:name="com.guruswarupa.launch.apps.phone.ContactDetailActivity" android:theme="@style/Theme.Launch.Settings" tools:node="merge" />
+
+        <activity android:name="com.guruswarupa.launch.apps.phone.ContactEditActivity" android:theme="@style/Theme.Launch.Settings" tools:node="merge" />
+
+        <activity android:name="com.guruswarupa.launch.apps.phone.ContactsActivity" android:theme="@style/Theme.Launch.Settings" tools:node="merge" />
+
+        <activity android:name="com.guruswarupa.launch.apps.phone.PhoneActivity" android:theme="@style/Theme.Launch.Settings" tools:node="merge" />
+
+        <activity android:name="com.guruswarupa.launch.ui.activities.CameraActivity" android:theme="@style/Theme.Launch.Media" tools:node="merge" />
+
+    </application>
+
+</manifest>

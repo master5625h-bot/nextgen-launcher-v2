@@ -1,0 +1,148 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="14dp"
+    android:background="@drawable/todo_item_ripple"
+    android:layout_marginBottom="8dp"
+    android:clickable="true"
+    android:focusable="true">
+
+    
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical">
+
+        
+        <View
+            android:id="@+id/priority_indicator"
+            android:layout_width="3dp"
+            android:layout_height="match_parent"
+            android:layout_marginEnd="12dp"
+            android:minHeight="40dp"
+            android:background="?attr/appTextPrimary" />
+
+        <CheckBox
+            android:id="@+id/todo_checkbox"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:buttonTint="?attr/appAccent"
+            android:layout_marginEnd="12dp"
+            android:saveEnabled="false" />
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:layout_marginEnd="8dp">
+
+            <TextView
+                android:id="@+id/todo_text"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textColor="?attr/appTextPrimary"
+                android:textSize="15sp"
+                android:lineSpacingExtra="2dp" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginTop="6dp"
+                android:gravity="center_vertical">
+
+                <TextView
+                    android:id="@+id/category_text"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textColor="?attr/appTextPrimary"
+                    android:textSize="11sp"
+                    android:background="@drawable/input_field_background"
+                    android:paddingHorizontal="6dp"
+                    android:paddingVertical="2dp"
+                    android:layout_marginEnd="6dp" />
+
+                <TextView
+                    android:id="@+id/due_time_text"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textColor="?attr/appTextPrimary"
+                    android:textSize="11sp"
+                    android:layout_marginEnd="6dp" />
+
+                <TextView
+                    android:id="@+id/interval_text"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textColor="?attr/appTextPrimary"
+                    android:textSize="11sp"
+                    android:visibility="gone" />
+
+            </LinearLayout>
+
+        </LinearLayout>
+
+        <ImageButton
+            android:id="@+id/delete_todo_button"
+            android:layout_width="36dp"
+            android:layout_height="36dp"
+            android:background="?android:attr/selectableItemBackgroundBorderless"
+            android:src="@drawable/ic_delete"
+            android:tint="?attr/appIconTint"
+            android:contentDescription="@string/delete_todo_item"
+            android:padding="6dp" />
+
+    </LinearLayout>
+
+    
+    <LinearLayout
+        android:id="@+id/days_container"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_marginTop="8dp"
+        android:layout_marginStart="47dp"
+        android:visibility="gone">
+
+        <TextView
+            android:id="@+id/day_sun"
+            style="@style/DayBadge"
+            android:text="@string/day_sun" />
+
+        <TextView
+            android:id="@+id/day_mon"
+            style="@style/DayBadge"
+            android:text="@string/day_mon" />
+
+        <TextView
+            android:id="@+id/day_tue"
+            style="@style/DayBadge"
+            android:text="@string/day_tue" />
+
+        <TextView
+            android:id="@+id/day_wed"
+            style="@style/DayBadge"
+            android:text="@string/day_wed" />
+
+        <TextView
+            android:id="@+id/day_thu"
+            style="@style/DayBadge"
+            android:text="@string/day_thu" />
+
+        <TextView
+            android:id="@+id/day_fri"
+            style="@style/DayBadge"
+            android:text="@string/day_fri" />
+
+        <TextView
+            android:id="@+id/day_sat"
+            style="@style/DayBadge"
+            android:text="@string/day_sat" />
+
+    </LinearLayout>
+
+</LinearLayout>
