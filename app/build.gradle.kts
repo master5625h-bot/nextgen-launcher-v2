@@ -34,7 +34,7 @@ val gitCommitCount: Int = System.getenv("VERSION_CODE_OVERRIDE")?.toIntOrNull()
     }
 
 android {
-    namespace = "com.nextgenlauncher"
+    namespace = "com.guruswarupa.launch"
     compileSdk = 35
     defaultConfig {
         applicationId = "com.nextgenlauncher"
@@ -63,8 +63,8 @@ android {
             if (signingConfigs.getByName("release").storeFile != null) {
                 signingConfig = signingConfigs.getByName("release")
             }
-            isMinifyEnabled = true
-            isShrinkResources = true
+            isMinifyEnabled = false
+            isShrinkResources = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
